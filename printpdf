@@ -1,0 +1,52 @@
+#!/usr/bin/python3
+import os
+import argparse
+import tempfile
+import shutil
+
+parser = argparse.ArgumentParser(description='Prepare documents for printing')
+parser.add_argument('pdfs', metavar='pdfs', nargs='+',
+                    help='a list of pdf files (ordered) to merge')
+parser.add_argument('--output', '-o', dest='output', default='output.pdf',
+                    help='output file')
+parser.add_argument('--gray', '-g', dest='gray', action='store_true',
+                    help='convert to grayscale')
+parser.add_argument('--nup', '-n', dest='nup', default=1, type=int,
+                    help='1, 2 or 4')
+parser.add_argument('--scale', '-s', dest='scale', action='store_true',
+                    help='super scale')
+
+args = parser.parse_args()
+
+TEMP_OUT = tempfile.gettempdir() + os.path.sep + "temp_out.pdf"
+TEMP_IN = tempfile.gettempdir() + os.path.sep + "temp_in.pdf"
+
+# merge pdfs
+if len(args.pdfs) > 1:
+    filenames = ""
+    for pdf in args.pdfs:
+        filenames += "\"" + pdf + "\" "
+    os.system(f"gs -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile={TEMP_OUT} -dBATCH {filenames}")
+else:
+    shutil.copy(args.pdfs[0], TEMP_OUT)
+
+# scale
+if args.scale:
+    shutil.move(TEMP_OUT, TEMP_IN)
+    os.system(f"pdfcrop {TEMP_IN} {TEMP_OUT}")
+
+# grayscale
+if args.gray:
+    shutil.move(TEMP_OUT, TEMP_IN)
+    os.system(f"gs -sDEVICE=pdfwrite -sProcessColorModel=DeviceGray -sColorConversionStrategy=Gray -dOverrideICC -o {TEMP_OUT} {TEMP_IN}")
+
+# n-up
+if args.nup != 1:
+    shutil.move(TEMP_OUT, TEMP_IN)
+    if args.nup % 2 == 0 and args.nup > 2:
+        os.system(f"pdfjam --suffix nup --nup {args.nup // 2}x2 --landscape {TEMP_IN} -o {TEMP_OUT}")
+    else:
+        os.system(f"pdfjam --suffix nup --nup {args.nup}x1 --landscape {TEMP_IN} -o {TEMP_OUT}")
+
+shutil.move(TEMP_OUT, args.output)
+print("Saved as " + args.output)
