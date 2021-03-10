@@ -24,7 +24,7 @@ optional arguments:
 ```
 
 ### Options description
-- -o is the output file location, defaults to `output.txt`
+- -o is the output file location, defaults to `output.pdf`
 - -g will turn the pdf into grayscale
 - -n will n-up the image. For example, `-n 4` will yield a 4 pages per sheet pdf
 - -s will "aggressively" scale up the pdf up to the margin, useful for wide margin pdfs that you want to n-up
